@@ -50,6 +50,8 @@ import altair as alt
 alt.renderers.enable("png")
 import time
 import warnings 
+import geopandas as gpd
+import matplotlib.pyplot as plt
 warnings.filterwarnings('ignore')
 ```
 
@@ -86,8 +88,8 @@ you compared it to. If it differs, why do you think it could differ?
 ```{python}
 import os
 
-#path = r'/Users/maryell/Desktop/Python II/'
-path = r'/Users/sarahkim/Documents/Coding/'
+path = r'/Users/maryell/Desktop/problem-set-4-maryell-sarah/'
+#path = r'/Users/sarahkim/Documents/Coding/'
 
 ```
 
@@ -125,6 +127,8 @@ df_2018 = pd.read_csv(absolute_path_2018, encoding='ISO-8859-1')
 short_hospitals_2018 = df_2018[(df_2018['PRVDR_CTGRY_CD'] == 1) & (df_2018['PRVDR_CTGRY_SBTYP_CD'] == 1)]
 hospitals_2018 = short_hospitals_2018['PRVDR_NUM'].nunique()
 hospitals_2018
+
+#https://stackoverflow.com/questions/30462807/encoding-error-in-panda-read-csv
 ```
 
 ```{python}
@@ -341,11 +345,50 @@ information is in each file? It will be useful going forward to have a sense goi
 forward of which files are big versus small. After unzipping, how big is each of the
 datasets?
 
+The five files are in order of descending file size: 
+1. .shp (shape file, 837.5 MB): contains the geometric data.
+2. .dbf (database file, 6.4 MB): contains attribute data corresponding to the .shp file.
+3. .shx (shape index file, 265 KB): contains the index data for the .shp file. 
+4. .xml (extensible markup language file, 16 KB): which is used to structure the data. 
+5. .prj (projection file, 165 bytes): contains the coordinate system and projection information corresponding to the .shp file.
+
+
 2. (Partner 1) Load the zip code shapefile and restrict to Texas zip codes. (Hint: you
 can identify which state a zip code is in using the first 2-3 numbers in the zip code
 (Wikipedia link). Then calculate the number of hospitals per zip code in 2016 based
 on the cleaned POS file from the previous step. Plot a choropleth of the number of
 hospitals by zip code in Texas.
+
+```{python}
+census = 'gz_2010_us_860_00_500k.shp'
+absolute_path_shp = os.path.join(path, census)
+census_shp = gpd.read_file(absolute_path_shp)
+```
+
+```{python}
+tx_zip_prefixes = [
+    '733', '750', '751', '752', '753', '754', '755', '756', '757', '758', '759', '760', '761', '762', '763', '764', '765', '766', '767', '768', '769', '770', '771', '772', '773', '774', '775', '776', '777', '778', '779', '780', '781', '782', '783', '784', '785', '786', '787', '788', '789', '790', '791', '792', '793', '794', '795', '796', '797', '798', '799'
+]
+
+tx_zip = census_shp[census_shp['ZCTA5'].str[:3].isin(tx_zip_prefixes)]
+
+hospitals_per_zip = combined_hospitals[combined_hospitals['Year'] == 2016].groupby('ZIP_CD')['PRVDR_NUM'].nunique().reset_index(name='Hospital_Count')
+
+tx_zip_hospitals = tx_zip.merge(hospitals_per_zip, left_on='ZCTA5', right_on='ZIP_CD', how='left')
+tx_zip_hospitals['Hospital_Count'] = tx_zip_hospitals['Hospital_Count'].fillna(0) 
+tx_zip_hospitals['Hospital_Count'] = tx_zip_hospitals['Hospital_Count'].astype(int) 
+
+#https://pandas.pydata.org/docs/reference/api/pandas.merge.html
+```
+
+```{python}
+ax = tx_zip_hospitals.plot(column='Hospital_Count', legend=True, cmap='Greens')
+
+plt.title('Number of Hospitals by Zipcode in Texas (2016)')
+plt.axis('off')  
+plt.show()  
+```
+
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 

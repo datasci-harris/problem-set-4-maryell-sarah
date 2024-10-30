@@ -1,1 +1,8 @@
 .DS_Store
+*.csv
+*.dbf
+*.prj
+*.shp
+*.shx
+*.xml
+
