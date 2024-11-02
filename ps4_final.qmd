@@ -420,6 +420,9 @@ tx_zip_prefixes = [
 """Isolating Texas zipcodes from the census shapefile"""
 tx_zip = census_shp[census_shp['ZCTA5'].str[:3].isin(tx_zip_prefixes)]
 
+"""Fixing data to match crs = EPSG:32614"""
+tx_zip = tx_zip.to_crs("EPSG:32614")
+
 """Texas prefixes by first 3 digits"""
 hospitals_per_zip = combined_hospitals[combined_hospitals['Year'] == 2016].groupby(
     'ZIP_CD')['PRVDR_NUM'].nunique().reset_index(name='Hospital_Count')
